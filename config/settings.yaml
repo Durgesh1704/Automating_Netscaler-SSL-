@@ -1,0 +1,72 @@
+# NetScaler SSL Automation — Configuration
+# Copy this file to settings.yaml and fill in your values.
+
+# -------------------------------------------------------------------
+# State Store
+# -------------------------------------------------------------------
+state_db: "state/jobs.db"     # SQLite path (dev). Use PostgreSQL DSN for prod.
+
+# -------------------------------------------------------------------
+# Citrix ADM
+# -------------------------------------------------------------------
+adm:
+  host:       "adm.corp.local"     # ADM hostname or IP
+  username:   "nsroot"
+  password:   "CHANGE_ME"
+  verify_ssl: true
+
+# -------------------------------------------------------------------
+# ITSM / Change Management
+# -------------------------------------------------------------------
+itsm:
+  provider:               "servicenow"   # servicenow | jira
+  servicenow_instance:    "mycompany"    # → mycompany.service-now.com
+  username:               "svc-automation"
+  password:               "CHANGE_ME"
+  # Jira (if provider=jira):
+  # jira_url:             "https://jira.corp.local"
+  # jira_project_key:     "CHG"
+
+# -------------------------------------------------------------------
+# UAT
+# -------------------------------------------------------------------
+uat_adcs:
+  - "10.0.0.10"    # UAT ADC 1 IP (as managed by ADM)
+  - "10.0.0.11"    # UAT ADC 2 IP
+
+uat_vips:
+  - host: "uat-vpn.corp.local"
+    port: 443
+  - host: "uat-gateway.corp.local"
+    port: 443
+
+# -------------------------------------------------------------------
+# Known VIP SANs (for SAN scope check in Inspector)
+# -------------------------------------------------------------------
+known_vip_sans:
+  - "vpn.corp.com"
+  - "gateway.corp.com"
+  - "aovpn.corp.com"
+
+# -------------------------------------------------------------------
+# TLS Validation
+# -------------------------------------------------------------------
+tls_timeout: 10    # seconds per VIP connection
+
+# -------------------------------------------------------------------
+# Notifications
+# -------------------------------------------------------------------
+notifications:
+  recipients:
+    - "netops@corp.com"
+    - "security@corp.com"
+
+  smtp:
+    host:     "smtp.corp.local"
+    port:     25
+    from:     "ssl-automation@corp.com"
+    tls:      false
+    username: ""
+    password: ""
+
+  teams_webhook_url: "https://outlook.office.com/webhook/YOUR_WEBHOOK_URL"
