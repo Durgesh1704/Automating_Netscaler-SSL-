@@ -1,0 +1,115 @@
+version: "3.9"
+
+# ---------------------------------------------------------------
+# NetScaler SSL Automation — Docker Compose
+#
+# Dev mode (SQLite, no external DB):
+#   docker compose up orchestrator
+#
+# Prod-like mode (PostgreSQL state store):
+#   docker compose --profile prod up
+#
+# Run TCM poller manually:
+#   docker compose run --rm poller
+#
+# Run tests:
+#   docker compose run --rm test
+# ---------------------------------------------------------------
+
+services:
+
+  # ---------------------------------------------------------------
+  # Orchestrator — triggered manually or via webhook
+  # ---------------------------------------------------------------
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: netscaler-ssl-automation:latest
+    container_name: ssl-orchestrator
+    command: >
+      python src/orchestrator.py
+      --cert-bundle /certs/bundle.pem
+      --target-certkey cert_vpn_prod
+      --vserver-type VPN
+      --config /app/config/settings.yaml
+    environment:
+      - ADM_PASSWORD=${ADM_PASSWORD}
+      - SNOW_PASSWORD=${SNOW_PASSWORD}
+    volumes:
+      - ./config/settings.yaml:/app/config/settings.yaml:ro
+      - ./state:/app/state
+      - ${CERT_BUNDLE_PATH:-./tests/fixtures}:/certs:ro
+    networks:
+      - ssl-net
+    restart: "no"
+
+  # ---------------------------------------------------------------
+  # TCM Poller — run via cron every 15 minutes
+  # ---------------------------------------------------------------
+  poller:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: netscaler-ssl-automation:latest
+    container_name: ssl-poller
+    command: python -m src.tcm.tcm_poller --config /app/config/settings.yaml
+    environment:
+      - ADM_PASSWORD=${ADM_PASSWORD}
+      - SNOW_PASSWORD=${SNOW_PASSWORD}
+    volumes:
+      - ./config/settings.yaml:/app/config/settings.yaml:ro
+      - ./state:/app/state
+    networks:
+      - ssl-net
+    restart: "no"
+
+  # ---------------------------------------------------------------
+  # Test runner
+  # ---------------------------------------------------------------
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: netscaler-ssl-automation:latest
+    container_name: ssl-test
+    command: >
+      python -m pytest tests/ -v
+      --tb=short
+      --color=yes
+    volumes:
+      - .:/app
+    networks:
+      - ssl-net
+    restart: "no"
+
+  # ---------------------------------------------------------------
+  # PostgreSQL state store (prod-like mode only)
+  # docker compose --profile prod up
+  # ---------------------------------------------------------------
+  postgres:
+    profiles: ["prod"]
+    image: postgres:16-alpine
+    container_name: ssl-state-db
+    environment:
+      POSTGRES_DB:       ssl_automation
+      POSTGRES_USER:     ssl_auto
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ssl-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ssl_auto -d ssl_automation"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+
+networks:
+  ssl-net:
+    driver: bridge

@@ -1,0 +1,48 @@
+# NetScaler SSL Automation — Wave Batching Strategy
+# ---------------------------------------------------------------
+# Controls how production deployment is split into waves.
+# Loaded by wave_executor.py at runtime.
+#
+# Tags must match labels applied to your ADCs in Citrix ADM:
+#   ADM → Infrastructure → Instances → <ADC> → Tags
+# ---------------------------------------------------------------
+
+waves:
+  - wave_number: 1
+    name: "Canary"
+    description: "First 5% of fleet — lowest-risk ADCs only"
+    pct_of_fleet: 0.05
+    tags:
+      env: "prod"
+      tier: "canary"
+    failure_threshold: 1        # Halt if more than 1 node fails
+    post_wave_wait_seconds: 60  # Wait 60s before proceeding to wave 2
+
+  - wave_number: 2
+    name: "Regional"
+    description: "Regional ADCs — 25% of fleet"
+    pct_of_fleet: 0.25
+    tags:
+      env: "prod"
+      region: "emea"
+    failure_threshold: 3        # Halt if more than 3 nodes fail
+    post_wave_wait_seconds: 120
+
+  - wave_number: 3
+    name: "Full Fleet"
+    description: "Remaining production ADCs — 100% of fleet"
+    pct_of_fleet: 1.0
+    tags:
+      env: "prod"
+    failure_threshold: 0        # Set dynamically to 5% of wave size at runtime
+    post_wave_wait_seconds: 0
+
+# ---------------------------------------------------------------
+# ADM Tag Reference
+# Apply these tags in ADM to control wave targeting:
+#
+#   Canary ADCs  → env=prod, tier=canary
+#   EMEA ADCs    → env=prod, region=emea
+#   All prod     → env=prod
+#   UAT ADCs     → env=uat
+# ---------------------------------------------------------------

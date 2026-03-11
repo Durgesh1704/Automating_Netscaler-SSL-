@@ -1,0 +1,20 @@
+# NetScaler SSL Automation — Ruff linting config
+line-length = 100
+target-version = "py310"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long — handled by formatter
+    "B008",  # do not perform function calls in default args
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101"]   # Allow assert in tests

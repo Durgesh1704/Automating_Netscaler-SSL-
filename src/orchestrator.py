@@ -11,6 +11,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
 import sys
 from datetime import datetime, timezone
@@ -73,11 +74,7 @@ def run(args: argparse.Namespace, cfg: dict) -> int:
     validator    = TLSValidator(timeout=cfg.get("tls_timeout", 10))
     job_builder  = JobBuilder()
     wave_executor = WaveExecutor(adm, job_builder, validator)
-    tcm_manager  = TCMManager(ITSMClient=ServiceNowClient(
-        instance=cfg["itsm"]["servicenow_instance"],
-        username=cfg["itsm"]["username"],
-        password=cfg["itsm"]["password"],
-    ))
+    tcm_manager  = TCMManager(itsm_client=itsm)
     notifier = Notifier(cfg=cfg.get("notifications", {}))
 
     bundle_pem = Path(args.cert_bundle).read_bytes()
@@ -85,7 +82,6 @@ def run(args: argparse.Namespace, cfg: dict) -> int:
     # ------------------------------------------------------------------ #
     # DETECTED                                                             #
     # ------------------------------------------------------------------ #
-    import hashlib
     cert_sha256 = hashlib.sha256(bundle_pem).hexdigest()
     job = sm.create_job(
         cert_bundle_path=args.cert_bundle,
@@ -182,11 +178,15 @@ def run(args: argparse.Namespace, cfg: dict) -> int:
     # TCM PENDING                                                          #
     # ------------------------------------------------------------------ #
     preflight_log = delta_report.to_preflight_log()
-    uat_summary   = (
-        job.uat_validation and
-        "\n".join(r["summary_line"] for r in job.uat_validation.get("results", []))
-        or "UAT skipped"
-    )
+    if job.uat_validation and job.uat_validation.get("results"):
+        uat_summary = "\n".join(
+            "  [PASS] {vip}:{port} | chain_depth={chain_depth} | issuer={issuer_cn} | expires={expiry} ({days_to_expiry}d)".format(**r)
+            if r.get("passed") else
+            "  [FAIL] {vip}:{port} | {failure_reason}".format(**r)
+            for r in job.uat_validation["results"]
+        )
+    else:
+        uat_summary = "UAT skipped"
 
     ticket = tcm_manager.create_change_ticket(
         job_id=job.job_id,
@@ -226,11 +226,7 @@ def continue_after_approval(job_id: str, cfg: dict) -> int:
     validator    = TLSValidator()
     job_builder  = JobBuilder()
     wave_executor = WaveExecutor(adm, job_builder, validator)
-    tcm_manager  = TCMManager(ServiceNowClient(
-        instance=cfg["itsm"]["servicenow_instance"],
-        username=cfg["itsm"]["username"],
-        password=cfg["itsm"]["password"],
-    ))
+    tcm_manager  = TCMManager(itsm_client=itsm)
     notifier = Notifier(cfg=cfg.get("notifications", {}))
 
     # ------------------------------------------------------------------ #

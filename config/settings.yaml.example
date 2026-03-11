@@ -1,0 +1,88 @@
+# NetScaler SSL Automation — Settings Template
+# ---------------------------------------------------------------
+# USAGE: cp config/settings.yaml.example config/settings.yaml
+#        Then fill in your real values.
+#        config/settings.yaml is git-ignored — never commit it.
+# ---------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# State Store
+# -------------------------------------------------------------------
+# Dev: SQLite path (relative to project root)
+# Prod: PostgreSQL DSN e.g. "postgresql://user:pass@host:5432/ssl_automation"
+state_db: "state/jobs.db"
+
+# -------------------------------------------------------------------
+# Citrix ADM
+# -------------------------------------------------------------------
+adm:
+  host:       "adm.your-company.local"   # ADM hostname or IP
+  username:   "nsroot"                   # ADM service account
+  password:   "CHANGE_ME"               # Use env var in prod: ${ADM_PASSWORD}
+  verify_ssl: true                       # Set false only for self-signed ADM cert
+
+# -------------------------------------------------------------------
+# ITSM / Change Management
+# -------------------------------------------------------------------
+itsm:
+  provider:            "servicenow"       # servicenow | jira
+  servicenow_instance: "your-company"     # → your-company.service-now.com
+  username:            "svc-ssl-auto"     # ServiceNow service account
+  password:            "CHANGE_ME"       # Use env var in prod: ${SNOW_PASSWORD}
+
+  # Uncomment for Jira instead:
+  # provider:          "jira"
+  # jira_url:          "https://jira.your-company.local"
+  # jira_project_key:  "CHG"
+  # username:          "svc-ssl-auto"
+  # password:          "CHANGE_ME"
+
+# -------------------------------------------------------------------
+# UAT ADCs
+# IPs must match what ADM uses as the managed device IP
+# -------------------------------------------------------------------
+uat_adcs:
+  - "10.0.0.10"    # UAT ADC 1
+  - "10.0.0.11"    # UAT ADC 2
+
+# VIPs to TLS-validate after UAT deployment
+uat_vips:
+  - host: "uat-vpn.your-company.local"
+    port: 443
+  - host: "uat-gateway.your-company.local"
+    port: 443
+
+# -------------------------------------------------------------------
+# Known VIP SANs
+# The leaf cert MUST cover at least one of these — safety check
+# -------------------------------------------------------------------
+known_vip_sans:
+  - "vpn.your-company.com"
+  - "gateway.your-company.com"
+  - "aovpn.your-company.com"
+
+# -------------------------------------------------------------------
+# TLS Validation
+# -------------------------------------------------------------------
+tls_timeout: 10    # seconds per VIP connection attempt
+
+# -------------------------------------------------------------------
+# Notifications
+# -------------------------------------------------------------------
+notifications:
+  recipients:
+    - "netops@your-company.com"
+    - "security@your-company.com"
+
+  # SMTP (leave host blank to disable)
+  smtp:
+    host:     "smtp.your-company.local"
+    port:     25
+    from:     "ssl-automation@your-company.com"
+    tls:      false
+    username: ""       # Leave blank for unauthenticated relay
+    password: ""
+
+  # Microsoft Teams incoming webhook (leave blank to disable)
+  teams_webhook_url: ""
+  # Example: "https://your-company.webhook.office.com/webhookb2/..."

@@ -12,6 +12,7 @@ Cron entry (every 15 min):
 
 from __future__ import annotations
 
+import argparse
 import logging
 import sys
 from datetime import datetime, timezone
@@ -99,5 +100,8 @@ def poll(cfg: dict) -> int:
 
 
 if __name__ == "__main__":
-    cfg = load_config()
+    parser = argparse.ArgumentParser(description="TCM Approval Poller")
+    parser.add_argument("--config", default="config/settings.yaml")
+    args = parser.parse_args()
+    cfg = load_config(args.config)
     sys.exit(poll(cfg))
