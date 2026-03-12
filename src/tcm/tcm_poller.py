@@ -33,8 +33,38 @@ logger = logging.getLogger("tcm_poller")
 
 
 def load_config(path: str = "config/settings.yaml") -> dict:
+    """Load config resolving ${ENV_VAR} placeholders from environment."""
+    import os
+    import re
+
     with open(path) as f:
-        return yaml.safe_load(f)
+        raw = f.read()
+
+    lines_no_comments = []
+    for line in raw.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            lines_no_comments.append("")
+        elif " #" in line:
+            lines_no_comments.append(line[: line.index(" #")])
+        else:
+            lines_no_comments.append(line)
+    raw_no_comments = "\n".join(lines_no_comments)
+
+    placeholders = re.findall(r"\$\{([^}]+)\}", raw_no_comments)
+    missing = [v for v in placeholders if v not in os.environ]
+    if missing:
+        raise EnvironmentError(
+            f"Missing required environment variables: {missing}\n"
+            + "\n".join(f"  export {v}=<value>" for v in missing)
+        )
+
+    resolved = re.sub(
+        r"\$\{([^}]+)\}",
+        lambda m: os.environ.get(m.group(1), m.group(0)),
+        raw,
+    )
+    return yaml.safe_load(resolved)
 
 
 def poll(cfg: dict) -> int:

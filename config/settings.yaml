@@ -1,34 +1,44 @@
 # NetScaler SSL Automation — Configuration
-# Copy this file to settings.yaml and fill in your values.
+# ---------------------------------------------------------------
+# Passwords are NOT stored here. They are read from environment
+# variables at runtime using ${VAR_NAME} syntax.
+#
+# Required environment variables:
+#   export ADM_PASSWORD=<your ADM password>
+#   export SNOW_PASSWORD=<your ServiceNow password>
+#
+# Optional (only if SMTP auth is needed):
+#   export SMTP_PASSWORD=<your SMTP password>
+# ---------------------------------------------------------------
 
 # -------------------------------------------------------------------
 # State Store
 # -------------------------------------------------------------------
-state_db: "state/jobs.db"     # SQLite path (dev). Use PostgreSQL DSN for prod.
+state_db: "state/jobs.db"     # SQLite (dev). Use PostgreSQL DSN for prod.
 
 # -------------------------------------------------------------------
 # Citrix ADM
 # -------------------------------------------------------------------
 adm:
   host:       "adm.corp.local"     # ADM hostname or IP
-  username:   "nsroot"
-  password:   "CHANGE_ME"
+  username:   "nsroot"             # ADM service account username
+  password:   ${ADM_PASSWORD}      # Set via: export ADM_PASSWORD=<value>
   verify_ssl: true
 
 # -------------------------------------------------------------------
 # ITSM / Change Management
 # -------------------------------------------------------------------
 itsm:
-  provider:               "servicenow"   # servicenow | jira
-  servicenow_instance:    "mycompany"    # → mycompany.service-now.com
-  username:               "svc-automation"
-  password:               "CHANGE_ME"
+  provider:               "servicenow"       # servicenow | jira
+  servicenow_instance:    "mycompany"        # → mycompany.service-now.com
+  username:               "svc-automation"  # ServiceNow service account
+  password:               ${SNOW_PASSWORD}  # Set via: export SNOW_PASSWORD=<value>
   # Jira (if provider=jira):
   # jira_url:             "https://jira.corp.local"
   # jira_project_key:     "CHG"
 
 # -------------------------------------------------------------------
-# UAT
+# UAT ADCs
 # -------------------------------------------------------------------
 uat_adcs:
   - "10.0.0.10"    # UAT ADC 1 IP (as managed by ADM)
@@ -67,6 +77,6 @@ notifications:
     from:     "ssl-automation@corp.com"
     tls:      false
     username: ""
-    password: ""
+    password: ""      # Set to ${SMTP_PASSWORD} if your relay requires auth
 
-  teams_webhook_url: "https://outlook.office.com/webhook/YOUR_WEBHOOK_URL"
+  teams_webhook_url: ""    # Set to your Teams incoming webhook URL

@@ -38,8 +38,50 @@ logger = logging.getLogger("orchestrator")
 
 
 def load_config(path: str = "config/settings.yaml") -> dict:
+    """
+    Load YAML config and resolve any ${ENV_VAR} placeholders from the environment.
+
+    Example in settings.yaml:
+        password: ${ADM_PASSWORD}
+
+    Raises EnvironmentError if a referenced variable is not set.
+    """
+    import os
+    import re
+
     with open(path) as f:
-        return yaml.safe_load(f)
+        raw = f.read()
+
+    # Strip YAML comments before scanning for placeholders
+    # so ${VAR_NAME} in comment text is not treated as a real reference
+    lines_no_comments = []
+    for line in raw.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            lines_no_comments.append("")   # blank out full-comment lines
+        elif " #" in line:
+            lines_no_comments.append(line[: line.index(" #")])  # strip inline comment
+        else:
+            lines_no_comments.append(line)
+    raw_no_comments = "\n".join(lines_no_comments)
+
+    # Find all ${VAR_NAME} placeholders in non-comment content
+    placeholders = re.findall(r"\$\{([^}]+)\}", raw_no_comments)
+    missing = [v for v in placeholders if v not in os.environ]
+    if missing:
+        raise EnvironmentError(
+            f"Missing required environment variables: {missing}\n"
+            f"Set them before running, e.g.:\n"
+            + "\n".join(f"  export {v}=<value>" for v in missing)
+        )
+
+    # Substitute placeholders in the FULL raw (comments are harmless after validation)
+    resolved = re.sub(
+        r"\$\{([^}]+)\}",
+        lambda m: os.environ.get(m.group(1), m.group(0)),   # leave unmatched as-is
+        raw,
+    )
+    return yaml.safe_load(resolved)
 
 
 def build_clients(cfg: dict):
