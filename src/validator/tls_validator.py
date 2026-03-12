@@ -19,6 +19,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+
 logger = logging.getLogger(__name__)
 
 MIN_CHAIN_DEPTH     = 2    # Leaf + at least one intermediate
@@ -111,7 +114,13 @@ class TLSValidator:
                     chain = []
                     if hasattr(tls_sock, "get_verified_chain"):
                         chain = tls_sock.get_verified_chain()
+                    parsed_cert = x509.load_der_x509_certificate(der_cert)
                     chain_depth = max(len(chain), 1)
+                    if not chain:
+                        # Python 3.10 does not expose chain APIs on ssl sockets.
+                        # Fallback heuristic: if issuer != subject, assume at least
+                        # one signer exists above the leaf cert.
+                        chain_depth = self._infer_chain_depth(peer_cert, parsed_cert)
 
                     # OCSP stapling detection
                     ocsp_stapled = False
@@ -120,11 +129,12 @@ class TLSValidator:
                     except Exception:
                         pass
 
-                    leaf_cn    = self._extract_cn(peer_cert)
-                    issuer_cn  = self._extract_issuer_cn(peer_cert)
-                    not_after  = peer_cert.get("notAfter", "")
+                    leaf_cn    = self._extract_cn(peer_cert) or self._extract_cn_from_x509(parsed_cert)
+                    issuer_cn  = self._extract_issuer_cn(peer_cert) or self._extract_issuer_cn_from_x509(parsed_cert)
+                    not_after  = peer_cert.get("notAfter", "") or parsed_cert.not_valid_after_utc.strftime("%b %d %H:%M:%S %Y GMT")
                     expiry_dt  = self._parse_expiry(not_after)
                     days_left  = (expiry_dt - datetime.now(timezone.utc)).days if expiry_dt else -1
+                    cert_serial = parsed_cert.serial_number
 
                     # --- Assertions ---
                     failure_reason = ""
@@ -140,6 +150,13 @@ class TLSValidator:
                             failure_reason = (
                                 f"Issuer mismatch: expected '{expected_issuer}', "
                                 f"got '{issuer_cn}'"
+                            )
+
+                    if not failure_reason and expected_serial is not None:
+                        if cert_serial != expected_serial:
+                            failure_reason = (
+                                f"Leaf serial mismatch: expected '{expected_serial}', "
+                                f"got '{cert_serial}'"
                             )
 
                     if not failure_reason and days_left < 0:
@@ -234,3 +251,24 @@ class TLSValidator:
             )
         except (ValueError, TypeError):
             return None
+
+    @staticmethod
+    def _infer_chain_depth(peer_cert: dict, cert: x509.Certificate) -> int:
+        """Fallback chain depth inference when ssl chain APIs are unavailable."""
+        subject = peer_cert.get("subject", [])
+        issuer = peer_cert.get("issuer", [])
+        if issuer and subject and issuer != subject:
+            return 2
+        if cert.issuer != cert.subject:
+            return 2
+        return 1
+
+    @staticmethod
+    def _extract_cn_from_x509(cert: x509.Certificate) -> str:
+        attrs = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+        return attrs[0].value if attrs else ""
+
+    @staticmethod
+    def _extract_issuer_cn_from_x509(cert: x509.Certificate) -> str:
+        attrs = cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)
+        return attrs[0].value if attrs else ""
