@@ -14,8 +14,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import datetime, timezone
 
 import requests
 
@@ -38,8 +37,8 @@ class TCMTicket:
     url:          str
     status:       str
     created_at:   datetime
-    approved_at:  Optional[datetime] = None
-    rejected_at:  Optional[datetime] = None
+    approved_at:  datetime | None = None
+    rejected_at:  datetime | None = None
 
 
 class ITSMClient(ABC):

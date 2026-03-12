@@ -14,11 +14,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
 from ..executor.adm_client import ADMClient, JobBuilder, JobResult
-from ..validator.tls_validator import TLSValidator, ValidationReport
 from ..state.state_machine import CertJob, JobStatus
+from ..validator.tls_validator import TLSValidator, ValidationReport
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ class WaveResult:
     adc_count:      int
     deployed_count: int
     failed_nodes:   list[dict]        = field(default_factory=list)
-    validation:     Optional[dict]    = None
+    validation:     dict | None    = None
 
 
 DEFAULT_WAVE_STRATEGY = [

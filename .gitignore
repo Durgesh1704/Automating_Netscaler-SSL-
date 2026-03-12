@@ -1,0 +1,19 @@
+# Local runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local state/data
+state/
+*.db
+
+# Local secrets/config overrides
+config/settings.yaml
+.env
+.env.*
+
+# OS/editor noise
+.DS_Store
+.vscode/
+.idea/
