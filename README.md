@@ -78,7 +78,8 @@ netscaler-ssl-automation/
 ├── scripts/
 │   └── run_poller.sh       # TCM approval poller (cron-scheduled)
 ├── docs/
-│   └── runbook.md          # Operational runbook
+│   ├── runbook.md          # Operational runbook
+│   └── enterprise_technical_handover.md  # Enterprise teammate handover
 ├── requirements.txt
 └── docker-compose.yml
 ```
