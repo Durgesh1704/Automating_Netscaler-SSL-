@@ -21,9 +21,6 @@ from datetime import datetime, timezone
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 
-from cryptography import x509
-from cryptography.x509.oid import NameOID
-
 logger = logging.getLogger(__name__)
 
 MIN_CHAIN_DEPTH     = 2    # Leaf + at least one intermediate
