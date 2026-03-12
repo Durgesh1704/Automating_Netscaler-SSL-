@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from src.delta.delta_engine import DeltaEngine, Scenario
-from src.inspector.inspector import ChainMap, CertInfo, CertRole
+from src.inspector.inspector import CertInfo, CertRole, ChainMap
 
 
 class MockADMClient:

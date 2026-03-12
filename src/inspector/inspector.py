@@ -16,11 +16,10 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Optional
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 from cryptography.x509.oid import ExtensionOID, NameOID
 
 logger = logging.getLogger(__name__)
@@ -40,8 +39,8 @@ class CertInfo:
     cn:          str
     serial:      int
     serial_hex:  str
-    aki:         Optional[str]   # Authority Key Identifier
-    ski:         Optional[str]   # Subject Key Identifier
+    aki:         str | None   # Authority Key Identifier
+    ski:         str | None   # Subject Key Identifier
     not_before:  datetime
     not_after:   datetime
     sans:        list[str]
@@ -63,7 +62,7 @@ class CertInfo:
 class ChainMap:
     leaf:          CertInfo
     intermediates: list[CertInfo]   # Ordered: closest to leaf first
-    root:          Optional[CertInfo]
+    root:          CertInfo | None
     bundle_sha256: str              # SHA256 of raw bundle bytes — used as dedup key
 
     @property
@@ -97,7 +96,7 @@ class Inspector:
     Loads a PEM bundle (may contain multiple certs) and produces a ChainMap.
     """
 
-    def __init__(self, known_vip_sans: Optional[list[str]] = None):
+    def __init__(self, known_vip_sans: list[str] | None = None):
         """
         Args:
             known_vip_sans: List of SANs (DNS names / IPs) that the target
@@ -219,7 +218,6 @@ class Inspector:
         # Leaf: not a CA cert (no BasicConstraints is_ca, or is_ca=False)
         # Intermediates: everything else
         # We identify the leaf as the cert whose SKI is not referenced as AKI by others
-        ski_set = {c.ski for c in certs if c.ski}
         aki_set = {c.aki for c in certs if c.aki}
 
         # Leaf: its SKI is not an AKI for any other cert in bundle

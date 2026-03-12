@@ -13,9 +13,8 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -98,7 +97,7 @@ class ADMClient:
     # ADC Discovery                                                        #
     # ------------------------------------------------------------------ #
 
-    def list_managed_adcs(self, tags: Optional[dict] = None) -> list[dict]:
+    def list_managed_adcs(self, tags: dict | None = None) -> list[dict]:
         """
         Returns list of ADCs managed by ADM, optionally filtered by tags.
         tags: e.g. {"env": "prod", "tier": "gateway"}
@@ -114,7 +113,7 @@ class ADMClient:
             ]
         return adcs
 
-    def get_certkey(self, adc_id: str, certkey_name: str) -> Optional[dict]:
+    def get_certkey(self, adc_id: str, certkey_name: str) -> dict | None:
         """
         Retrieves live certkey info from an ADC via ADM proxy.
         Returns dict with leaf_serial, intermediate_serial, or None if not found.
@@ -314,7 +313,7 @@ class JobBuilder:
         adc_ids:             list[str],
         certkey_name:        str,
         original_cert_pem:   str,
-        original_im_certkey: Optional[str] = None,
+        original_im_certkey: str | None = None,
     ) -> dict:
         """
         Pre-generates rollback payload. Called in TCM_APPROVED state,

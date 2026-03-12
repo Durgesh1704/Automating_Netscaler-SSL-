@@ -9,9 +9,8 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from .state_machine import CertJob, JobStatus, StateTransition
 
@@ -106,14 +105,14 @@ class StateStore:
     # Read                                                                 #
     # ------------------------------------------------------------------ #
 
-    def get(self, job_id: str) -> Optional[CertJob]:
+    def get(self, job_id: str) -> CertJob | None:
         with self._connect() as conn:
             row = conn.execute(
                 "SELECT payload FROM cert_jobs WHERE job_id = ?", (job_id,)
             ).fetchone()
         return self._deserialise(row["payload"]) if row else None
 
-    def find_by_sha256(self, sha256: str) -> Optional[CertJob]:
+    def find_by_sha256(self, sha256: str) -> CertJob | None:
         with self._connect() as conn:
             row = conn.execute(
                 "SELECT payload FROM cert_jobs WHERE cert_sha256 = ?", (sha256,)

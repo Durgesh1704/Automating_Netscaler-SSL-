@@ -5,13 +5,15 @@ Manages job lifecycle, persistent state, and valid transitions.
 
 from __future__ import annotations
 
-import uuid
 import logging
+import uuid
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from dataclasses import dataclass, field, asdict
-from typing import Optional
-import json
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .store import StateStore
 
 logger = logging.getLogger(__name__)
 
@@ -76,14 +78,14 @@ class CertJob:
     status:             JobStatus              = JobStatus.DETECTED
     ts_created:         datetime               = field(default_factory=lambda: datetime.now(timezone.utc))
     ts_updated:         datetime               = field(default_factory=lambda: datetime.now(timezone.utc))
-    cert_sha256:        Optional[str]          = None   # Dedup key
-    chain_map:          Optional[dict]         = None   # Output of inspector
-    delta_report:       Optional[dict]         = None   # Output of delta engine
-    uat_job_id:         Optional[str]          = None
-    uat_validation:     Optional[dict]         = None
-    tcm_ticket_id:      Optional[str]          = None
+    cert_sha256:        str | None          = None   # Dedup key
+    chain_map:          dict | None         = None   # Output of inspector
+    delta_report:       dict | None         = None   # Output of delta engine
+    uat_job_id:         str | None          = None
+    uat_validation:     dict | None         = None
+    tcm_ticket_id:      str | None          = None
     tcm_age_hours:      float                  = 0.0
-    rollback_payload:   Optional[dict]         = None   # Pre-generated in TCM_APPROVED
+    rollback_payload:   dict | None         = None   # Pre-generated in TCM_APPROVED
     wave_results:       dict                   = field(default_factory=dict)
     total_deployed:     int                    = 0
     history:            list[StateTransition]  = field(default_factory=list)
@@ -114,7 +116,7 @@ class StateMachine:
     History is appended on every transition for full audit trail.
     """
 
-    def __init__(self, store: "StateStore"):
+    def __init__(self, store: StateStore):
         self.store = store
 
     def create_job(self, cert_bundle_path: str, target_certkey: str, cert_sha256: str) -> CertJob:

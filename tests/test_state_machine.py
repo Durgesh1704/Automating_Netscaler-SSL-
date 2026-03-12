@@ -1,8 +1,15 @@
 """Unit tests for the state machine."""
+
 import pytest
-from src.state.state_machine import StateMachine, JobStatus, InvalidTransitionError, DuplicateJobError
+
+from src.state.state_machine import (
+    DuplicateJobError,
+    InvalidTransitionError,
+    JobStatus,
+    StateMachine,
+)
 from src.state.store import StateStore
-import tempfile, os
+
 
 @pytest.fixture
 def store(tmp_path):
