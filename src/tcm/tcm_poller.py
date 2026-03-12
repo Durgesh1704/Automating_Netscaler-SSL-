@@ -15,14 +15,13 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from datetime import datetime, timezone
 
 import yaml
 
-from src.state.state_machine import StateMachine, JobStatus
-from src.state.store import StateStore
-from src.tcm.tcm_manager import TCMManager, ServiceNowClient
 from src.notifier.notifier import Notifier
+from src.state.state_machine import JobStatus, StateMachine
+from src.state.store import StateStore
+from src.tcm.tcm_manager import ServiceNowClient, TCMManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,7 +53,7 @@ def load_config(path: str = "config/settings.yaml") -> dict:
     placeholders = re.findall(r"\$\{([^}]+)\}", raw_no_comments)
     missing = [v for v in placeholders if v not in os.environ]
     if missing:
-        raise EnvironmentError(
+        raise OSError(
             f"Missing required environment variables: {missing}\n"
             + "\n".join(f"  export {v}=<value>" for v in missing)
         )

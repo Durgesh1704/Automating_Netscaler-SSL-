@@ -19,7 +19,6 @@ Output files (git-tracked as test fixtures only):
 from __future__ import annotations
 
 import datetime
-import ipaddress
 from pathlib import Path
 
 from cryptography import x509
@@ -145,8 +144,8 @@ def main():
     print(f"  root.pem          CN={root_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value}")
     print(f"  intermediate.pem  CN={im_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value}")
     print(f"  leaf.pem          CN={leaf_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value}")
-    print(f"  bundle.pem        (leaf + intermediate + root)")
-    print(f"  future_dated.pem  notBefore=+48h (rejection test)")
+    print("  bundle.pem        (leaf + intermediate + root)")
+    print("  future_dated.pem  notBefore=+48h (rejection test)")
     print("Done.")
 
 

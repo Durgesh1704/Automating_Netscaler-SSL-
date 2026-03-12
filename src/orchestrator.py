@@ -14,20 +14,19 @@ import argparse
 import hashlib
 import logging
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
 
-from src.state.state_machine import StateMachine, JobStatus
-from src.state.store import StateStore
-from src.inspector.inspector import Inspector
 from src.delta.delta_engine import DeltaEngine
 from src.executor.adm_client import ADMClient, JobBuilder
-from src.executor.wave_executor import WaveExecutor, DEFAULT_WAVE_STRATEGY, WaveResult
-from src.validator.tls_validator import TLSValidator
-from src.tcm.tcm_manager import TCMManager, ServiceNowClient
+from src.executor.wave_executor import DEFAULT_WAVE_STRATEGY, WaveExecutor, WaveResult
+from src.inspector.inspector import Inspector
 from src.notifier.notifier import Notifier
+from src.state.state_machine import JobStatus, StateMachine
+from src.state.store import StateStore
+from src.tcm.tcm_manager import ServiceNowClient, TCMManager
+from src.validator.tls_validator import TLSValidator
 
 logging.basicConfig(
     level=logging.INFO,
@@ -69,7 +68,7 @@ def load_config(path: str = "config/settings.yaml") -> dict:
     placeholders = re.findall(r"\$\{([^}]+)\}", raw_no_comments)
     missing = [v for v in placeholders if v not in os.environ]
     if missing:
-        raise EnvironmentError(
+        raise OSError(
             f"Missing required environment variables: {missing}\n"
             f"Set them before running, e.g.:\n"
             + "\n".join(f"  export {v}=<value>" for v in missing)
@@ -115,9 +114,7 @@ def run(args: argparse.Namespace, cfg: dict) -> int:
     delta_engine = DeltaEngine(adm_client=adm)
     validator    = TLSValidator(timeout=cfg.get("tls_timeout", 10))
     job_builder  = JobBuilder()
-    wave_executor = WaveExecutor(adm, job_builder, validator)
     tcm_manager  = TCMManager(itsm_client=itsm)
-    notifier = Notifier(cfg=cfg.get("notifications", {}))
 
     bundle_pem = Path(args.cert_bundle).read_bytes()
 

@@ -17,7 +17,9 @@ import socket
 import ssl
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Optional
+
+from cryptography import x509
+from cryptography.x509.oid import NameOID
 
 from cryptography import x509
 from cryptography.x509.oid import NameOID
@@ -88,8 +90,8 @@ class TLSValidator:
         self,
         host:             str,
         port:             int = 443,
-        expected_serial:  Optional[int] = None,
-        expected_issuer:  Optional[str] = None,
+        expected_serial:  int | None = None,
+        expected_issuer:  str | None = None,
     ) -> VIPResult:
         """
         Opens a TLS connection and inspects the certificate chain served.
@@ -186,7 +188,7 @@ class TLSValidator:
                     log_fn(result.summary_line())
                     return result
 
-        except (socket.timeout, ConnectionRefusedError, OSError) as exc:
+        except (TimeoutError, ConnectionRefusedError, OSError) as exc:
             logger.error("Cannot connect to VIP %s:%d — %s", host, port, exc)
             return VIPResult(
                 vip=host, port=port, passed=False,
@@ -198,8 +200,8 @@ class TLSValidator:
     def validate_all(
         self,
         vips:              list[dict],   # [{"host": "...", "port": 443}, ...]
-        expected_serial:   Optional[int] = None,
-        expected_issuer:   Optional[str] = None,
+        expected_serial:   int | None = None,
+        expected_issuer:   str | None = None,
         failure_threshold: int = 0,      # 0 = any failure halts
     ) -> ValidationReport:
         """
@@ -243,7 +245,7 @@ class TLSValidator:
         return issuer.get("commonName", "")
 
     @staticmethod
-    def _parse_expiry(not_after: str) -> Optional[datetime]:
+    def _parse_expiry(not_after: str) -> datetime | None:
         """Parse the notAfter string from Python ssl module."""
         try:
             return datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z").replace(

@@ -12,9 +12,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
-from ..inspector.inspector import ChainMap, CertInfo
+from ..inspector.inspector import ChainMap
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +29,8 @@ class ADCDeltaResult:
     adc_id:      str
     adc_name:    str
     scenario:    str   # "A", "B", "NO_CHANGE"
-    live_serial: Optional[int] = None
-    new_serial:  Optional[int] = None
+    live_serial: int | None = None
+    new_serial:  int | None = None
     reason:      str = ""
 
 
@@ -137,7 +136,7 @@ class DeltaEngine:
         self,
         adc: dict,
         target_certkey: str,
-        new_intermediate_serial: Optional[int],
+        new_intermediate_serial: int | None,
         chain_map: ChainMap,
     ) -> ADCDeltaResult:
         """

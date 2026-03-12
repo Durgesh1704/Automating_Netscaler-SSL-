@@ -11,12 +11,12 @@ from pathlib import Path
 import pytest
 
 from src.inspector.inspector import (
-    Inspector,
-    ChainMap,
     CertRole,
+    ChainMap,
     FutureDatedCertError,
-    SANMismatchError,
+    Inspector,
     InspectorError,
+    SANMismatchError,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
