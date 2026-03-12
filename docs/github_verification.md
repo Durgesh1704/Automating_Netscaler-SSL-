@@ -32,3 +32,9 @@ This document re-verifies the repository against the intended project goal:
   - ITSM ticket lifecycle,
   - poller approval pickup,
   - validation + rollback behavior (if forced-fail test is permitted).
+
+## Latest re-verification run
+
+- `pytest -q`: **35 passed**.
+- `ruff check .`: **passed after import cleanup** in `src/validator/tls_validator.py`, `tests/test_delta_engine.py`, and `tests/test_wave_executor.py`.
+- GitHub workflows still present for lint and tests under `.github/workflows/`.

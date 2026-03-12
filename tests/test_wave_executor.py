@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from src.executor.adm_client import JobResult, NodeResult
-from src.executor.wave_executor import WaveExecutor, WaveConfig
+from src.executor.wave_executor import WaveConfig, WaveExecutor
 from src.state.state_machine import CertJob, JobStatus
 
 
